@@ -81,11 +81,11 @@ RUN set -x \
         python3 python3-pip python3-setuptools \
     && pip3 install --upgrade pip \
     && pip3 install wheel zipp==1.0.0 \
-    && pip3 install awscli python-consul psycopg2-binary \
-    && pip3 install https://github.com/zalando/patroni/archive/v2.1.2.zip \
+    && pip3 install python-consul psycopg2-binary \
+    && pip3 install https://github.com/zalando/patroni/archive/v2.1.3.zip \
     \
     # Install WAL-G
-    && curl -LO https://github.com/wal-g/wal-g/releases/download/v1.1/wal-g-pg-ubuntu-20.04-amd64 \
+    && curl -LO https://github.com/wal-g/wal-g/releases/download/v2.0.0/wal-g-pg-ubuntu-20.04-amd64 \
     && install -oroot -groot -m755 wal-g-pg-ubuntu-20.04-amd64 /usr/local/bin/wal-g \
     && rm wal-g-pg-ubuntu-20.04-amd64 \
     \
