@@ -92,9 +92,9 @@ COPY --from=ext_build /usr/lib/postgresql/14/ /usr/lib/postgresql/14/
 
 RUN set -x \
     && apt-get update -y \
-    && apt-get install -y gcc curl procps python3-dev libpython3-dev libyaml-dev apt-transport-https ca-certificates \
-    && echo "deb https://packagecloud.io/timescale/timescaledb/debian/ stretch main" > /etc/apt/sources.list.d/timescaledb.list \
-    && curl -L https://packagecloud.io/timescale/timescaledb/gpgkey | apt-key add - \
+    && apt-get install -y gcc curl procps python3-dev libpython3-dev libyaml-dev apt-transport-https ca-certificates lsb-release \
+    && echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main" > /etc/apt/sources.list.d/timescaledb.list \
+    && curl -L https://packagecloud.io/timescale/timescaledb/gpgkey | gpg --dearmor > /etc/apt/trusted.gpg.d/timescaledb.gpg \
     && apt-get update -y \
     && apt-cache showpkg postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
     && apt-get install -y --no-install-recommends \
