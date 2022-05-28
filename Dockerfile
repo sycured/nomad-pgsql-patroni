@@ -26,7 +26,7 @@ RUN mkdir -p ${GOPATH}/src/github.com/timescale/ \
 ############################
 # Build Postgres extensions
 ############################
-FROM postgres:14.1 AS ext_build
+FROM postgres:14 AS ext_build
 ARG PG_MAJOR
 
 RUN set -x \
@@ -51,7 +51,7 @@ RUN set -x \
 ############################
 # Add Timescale, PostGIS and Patroni
 ############################
-FROM postgres:14.1
+FROM postgres:14
 ARG PG_MAJOR
 ARG POSTGIS_MAJOR
 ARG TIMESCALEDB_MAJOR
