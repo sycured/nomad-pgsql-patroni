@@ -1,15 +1,13 @@
 version: '3'
 services:
-  # Consul
   consul:
     image: consul
     ports:
       - '8500:8500'
 
-  # patroni
   patroni:
     build: .
-    image: ccakes/nomad-pgsql-patroni:14.1-1.tsdb_gis
+    image: sycured/nomad-pgsql-patroni:latest
     environment:
       PGDATA: /alloc/data
     ports:
