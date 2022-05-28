@@ -28,10 +28,14 @@ RUN mkdir -p ${GOPATH}/src/github.com/timescale/ \
 ############################
 FROM postgres:14 AS ext_build
 ARG PG_MAJOR
+ARG CITUS_VERSION=v10.2.5
+ARG HLL_VERSION=v2.16
+ARG TDIGEST_VERSION=v1.4.0
+ARG TOPN_VERSION=v2.4.0
 
 RUN set -x \
     && apt-get update -y \
-    && apt-get install -y git curl apt-transport-https ca-certificates build-essential libpq-dev postgresql-server-dev-${PG_MAJOR} \
+    && apt-get install -y git curl apt-transport-https ca-certificates build-essential libpq-dev postgresql-server-dev-${PG_MAJOR} libcurl4-openssl-dev libkrb5-dev liblz4-dev libicu-dev libzstd-dev \
     && mkdir /build \
     && cd /build \
     \
@@ -46,7 +50,32 @@ RUN set -x \
     && git clone https://github.com/gavinwahl/postgres-json-schema \
     && cd postgres-json-schema \
     && make \
-    && make install
+    && make install \
+    && cd .. \
+    # build postgresql-hll
+    && git clone -b $HLL_VERSION https://github.com/citusdata/postgresql-hll \
+    && cd postgresql-hll \
+    && make \
+    && make install \
+    && cd .. \
+    # build postgresql-topn
+    && git clone -b $TOPN_VERSION https://github.com/citusdata/postgresql-topn \
+    && cd postgresql-topn \
+    && make \
+    && make install \
+    && cd .. \
+    # build tdigest
+    && git clone -b $TDIGEST_VERSION https://github.com/tvondra/tdigest \
+    && cd tdigest \
+    && make \
+    && make install \
+    && cd .. \
+    # build citus
+    && git clone -b $CITUS_VERSION https://github.com/citusdata/citus \
+    && cd citus \
+    && ./configure \
+    && make extension \
+    && make install-extension
 
 ############################
 # Add Timescale, PostGIS and Patroni
