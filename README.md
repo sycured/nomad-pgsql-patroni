@@ -6,37 +6,26 @@ It also comes pre-baked with some tools and extensions
 
 ### Tools
 
-| Name | Version | Link |
-|--|--|--|
-| awscli | 1.22.37 | https://pypi.org/project/awscli/ |
-| WAL-G | 1.1 | https://github.com/wal-g/wal-g |
-| Patroni | 2.1.2 | https://github.com/zalando/patroni |
-| vaultenv | 0.14.0 | https://github.com/channable/vaultenv |
+| Name | Link |
+|--|--|
+| WAL-G | https://github.com/wal-g/wal-g |
+| Patroni | https://github.com/zalando/patroni |
+| vaultenv | https://github.com/channable/vaultenv |
 
 ### Extensions
 
-| Name | Version | Link |
-|--|--|--|
-| Timescale | 2.5.1 | https://www.timescale.com |
-| PostGIS | 3.2.0 | https://postgis.net |
-| pg_cron | 1.4 | https://github.com/citusdata/pg_cron |
-| pgRouting | 3.2.1 | https://pgrouting.org |
-| postgres-json-schema | 0.1.1 | https://github.com/gavinwahl/postgres-json-schema |
-| vector | 0.2.2 | https://github.com/ankane/pgvector |
-
-### A note about TimescaleDB and Postgres 14
-
-Timescale doesn't yet support Postgres 14 so it's missing from the these builds. If you need Timescale, stick to the [`pg-13`](https://github.com/ccakes/nomad-pgsql-patroni/tree/pg-13) branch for now.
-
-Support is tracked in https://github.com/timescale/timescaledb/issues/3034
-
-### Still running an older Postgres version?
-
-These branches are *mostly* supported containing older versions. If I get behind on a point release feel free to raise an issue :thumbsup:
-
-- [`pg-13`](https://github.com/ccakes/nomad-pgsql-patroni/tree/pg-13)
-- [`pg-12`](https://github.com/ccakes/nomad-pgsql-patroni/tree/pg-12)
-- [`pg-11`](https://github.com/ccakes/nomad-pgsql-patroni/tree/pg-11)
+| Name | Link |
+|--|--|
+| Citus | https://github.com/citusdata/citus |
+| HyperLogLog | https://github.com/citusdata/postgresql-hll |
+| PostGIS | https://postgis.net |
+| pg_cron | https://github.com/citusdata/pg_cron |
+| pgRouting | https://pgrouting.org |
+| postgres-json-schema | https://github.com/gavinwahl/postgres-json-schema |
+| tdigest | https://github.com/tvondra/tdigest |
+| Timescale | https://www.timescale.com |
+| topn | https://github.com/citusdata/postgresql-topn |
+| vector | https://github.com/ankane/pgvector |
 
 ## Usage
 
@@ -77,7 +66,7 @@ EOL
       }
 
       config {
-        image = "ccakes/nomad-pgsql-patroni:14.1-1.tsdb_gis"
+        image = "sycured/nomad-pgsql-patroni:latest"
 
         ports = ["api", "pg"]
       }
