@@ -28,14 +28,14 @@ RUN mkdir -p ${GOPATH}/src/github.com/timescale/ \
 ############################
 FROM postgres:14 AS ext_build
 ARG PG_MAJOR
-ARG CITUS_VERSION=v10.2.5
+ARG CITUS_VERSION=v11.0.2
 ARG HLL_VERSION=v2.16
 ARG TDIGEST_VERSION=v1.4.0
 ARG TOPN_VERSION=v2.4.0
 
 RUN set -x \
     && apt-get update -y \
-    && apt-get install -y git curl apt-transport-https ca-certificates build-essential libpq-dev postgresql-server-dev-${PG_MAJOR} libcurl4-openssl-dev libkrb5-dev liblz4-dev libicu-dev libzstd-dev \
+    && apt-get install -y autoconf git curl apt-transport-https ca-certificates build-essential libpq-dev postgresql-server-dev-${PG_MAJOR} libcurl4-openssl-dev libkrb5-dev liblz4-dev libicu-dev libzstd-dev \
     && mkdir /build \
     && cd /build \
     \
