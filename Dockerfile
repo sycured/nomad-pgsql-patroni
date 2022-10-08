@@ -27,6 +27,7 @@ RUN mkdir -p ${GOPATH}/src/github.com/timescale/ \
 ############################
 FROM citusdata/citus:latest AS ext_build
 ARG TDIGEST_VERSION=v1.4.0
+ARG PGVECTOR_VERSION=v0.2.7
 
 RUN set -x \
     && apt-get update -y \
@@ -36,7 +37,7 @@ RUN set -x \
     && cd /build \
     \
     # Build pgvector
-    && git clone --branch v0.2.2 https://github.com/ankane/pgvector.git \
+    && git clone --branch $PGVECTOR_VERSION https://github.com/ankane/pgvector.git \
     && cd pgvector \
     && make \
     && make install \
