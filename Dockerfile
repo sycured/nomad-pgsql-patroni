@@ -1,38 +1,16 @@
-ARG GO_VERSION=1.17
-ARG TIMESCALEDB_MAJOR=2
 ARG POSTGIS_MAJOR=3
-
-############################
-# Build tools binaries in separate image
-############################
-FROM golang:${GO_VERSION} AS tools
-
-RUN mkdir -p ${GOPATH}/src/github.com/timescale/ \
-    && cd ${GOPATH}/src/github.com/timescale/ \
-    && git clone https://github.com/timescale/timescaledb-tune.git \
-    && git clone https://github.com/timescale/timescaledb-parallel-copy.git \
-    # Build timescaledb-tune
-    && cd timescaledb-tune/cmd/timescaledb-tune \
-    && git fetch && git checkout --quiet $(git describe --abbrev=0) \
-    && go get -d -v \
-    && go build -o /go/bin/timescaledb-tune \
-    # Build timescaledb-parallel-copy
-    && cd ${GOPATH}/src/github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-parallel-copy \
-    && git fetch && git checkout --quiet $(git describe --abbrev=0) \
-    && go get -d -v \
-    && go build -o /go/bin/timescaledb-parallel-copy
 
 ############################
 # Build Postgres extensions
 ############################
 FROM citusdata/citus:latest AS ext_build
-ARG TDIGEST_VERSION=v1.4.0
-ARG PGVECTOR_VERSION=v0.2.7
+ARG PGSODIUM_VERSION=v3.0.6
+ARG PGVECTOR_VERSION=v0.3.0
 
 RUN set -x \
     && apt-get update -y \
     && apt-get upgrade -y \
-    && apt-get install -y git build-essential libipc-run-perl postgresql-server-dev-${PG_MAJOR} \
+    && apt-get install -y git build-essential libipc-run-perl postgresql-server-dev-${PG_MAJOR} libsodium-dev \
     && mkdir /build \
     && cd /build \
     \
@@ -49,9 +27,10 @@ RUN set -x \
     && make \
     && make install \
     && cd .. \
-    # build tdigest
-    && git clone -b $TDIGEST_VERSION https://github.com/tvondra/tdigest \
-    && cd tdigest \
+    \
+    # Build pgsodium
+    && git clone --branch $PGSODIUM_VERSION https://github.com/michelp/pgsodium \
+    && cd pgsodium \
     && make \
     && make install
 
@@ -60,41 +39,33 @@ RUN set -x \
 ############################
 FROM citusdata/citus:latest
 ARG POSTGIS_MAJOR
-ARG TIMESCALEDB_MAJOR
 
 # Add extensions
-COPY --from=tools /go/bin/* /usr/local/bin/
-COPY --from=ext_build /usr/share/postgresql/14/ /usr/share/postgresql/14/
-COPY --from=ext_build /usr/lib/postgresql/14/ /usr/lib/postgresql/14/
+COPY --from=ext_build /usr/share/postgresql/${PG_MAJOR}/ /usr/share/postgresql/${PG_MAJOR}/
+COPY --from=ext_build /usr/lib/postgresql/${PG_MAJOR}/ /usr/lib/postgresql/${PG_MAJOR}/
 
 RUN set -x \
     && apt-get update -y \
     && apt-get upgrade -y \
     && apt-get install --no-install-recommends -y curl lsb-release procps \
-    && echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main" > /etc/apt/sources.list.d/timescaledb.list \
-    && curl -L https://packagecloud.io/timescale/timescaledb/gpgkey | gpg --dearmor > /etc/apt/trusted.gpg.d/timescaledb.gpg \
-    && apt-get update -y \
-    && apt-get install -y --no-install-recommends \
+        libsodium23 \
+        patroni \
+        python3-consul \
         postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
         postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts \
-        timescaledb-$TIMESCALEDB_MAJOR-postgresql-$PG_MAJOR \
         postgis \
         postgresql-$PG_MAJOR-pgrouting \
-        postgresql-$PG_MAJOR-cron \
-    \
-    # Install Patroni
-    && apt-get install -y --no-install-recommends python3-cdiff python3-click python3-consul python3-dateutil python3-pip python3-prettytable python3-psutil python3-psycopg2 python3-yaml \
-    && pip3 install patroni[consul] \
+        postgresql-$PG_MAJOR-pgcron \
+        postgresql-$PG_MAJOR-tdigest \
+        postgresql-$PG_MAJOR-powa \
+        postgresql-$PG_MAJOR-pg-stat-kcache \
+        postgresql-$PG_MAJOR-pg-qualstats \
+        postgresql-$PG_MAJOR-hypopg \
     \
     # Install WAL-G
-    && curl -LO https://github.com/wal-g/wal-g/releases/download/v2.0.0/wal-g-pg-ubuntu-20.04-amd64 \
-    && install -oroot -groot -m755 wal-g-pg-ubuntu-20.04-amd64 /usr/local/bin/wal-g \
-    && rm wal-g-pg-ubuntu-20.04-amd64 \
-    \
-    # Install vaultenv
-    && curl -LO https://github.com/channable/vaultenv/releases/download/v0.14.0/vaultenv-0.14.0-linux-musl \
-    && install -oroot -groot -m755 vaultenv-0.14.0-linux-musl /usr/bin/vaultenv \
-    && rm vaultenv-0.14.0-linux-musl \
+    && curl -LO https://github.com/wal-g/wal-g/releases/download/v2.0.1/wal-g-pg-ubuntu-20.04-$(uname -m) \
+    && install -oroot -groot -m755 wal-g-pg-ubuntu-20.04-$(uname -m) /usr/local/bin/wal-g \
+    && rm wal-g-pg-ubuntu-20.04-$(uname -m) \
     \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
@@ -107,10 +78,9 @@ RUN set -x \
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY ./files/000_shared_libs.sh /docker-entrypoint-initdb.d/000_shared_libs.sh
 COPY ./files/001_initdb_postgis.sh /docker-entrypoint-initdb.d/001_initdb_postgis.sh
-COPY ./files/002_timescaledb_tune.sh /docker-entrypoint-initdb.d/002_timescaledb_tune.sh
 
 COPY ./files/update-postgis.sh /usr/local/bin
 COPY ./files/docker-initdb.sh /usr/local/bin
 
 USER postgres
-CMD ["patroni", "/secrets/patroni.yml"]
+CMD ["/usr/bin/patroni", "/etc/patroni/config.yml"]
