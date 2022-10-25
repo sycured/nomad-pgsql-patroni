@@ -6,26 +6,45 @@ It also comes pre-baked with some tools and extensions
 
 ### Tools
 
-| Name | Link |
-|--|--|
-| WAL-G | https://github.com/wal-g/wal-g |
-| Patroni | https://github.com/zalando/patroni |
-| vaultenv | https://github.com/channable/vaultenv |
+| Name    | Link                               | Type of install |
+| ------- | ---------------------------------- | --------------- |
+| Patroni | https://github.com/zalando/patroni | Package         |
+| WAL-G   | https://github.com/wal-g/wal-g     | Binary          |
 
 ### Extensions
 
-| Name | Link |
-|--|--|
-| Citus | https://github.com/citusdata/citus |
-| HyperLogLog | https://github.com/citusdata/postgresql-hll |
-| PostGIS | https://postgis.net |
-| pg_cron | https://github.com/citusdata/pg_cron |
-| pgRouting | https://pgrouting.org |
-| postgres-json-schema | https://github.com/gavinwahl/postgres-json-schema |
-| tdigest | https://github.com/tvondra/tdigest |
-| Timescale | https://www.timescale.com |
-| topn | https://github.com/citusdata/postgresql-topn |
-| vector | https://github.com/ankane/pgvector |
+| Name                 | Link                                              | Type of install |
+| -------------------- | ------------------------------------------------- | --------------- |
+| citus                | https://github.com/citusdata/citus                | Package         |
+| hyperloglog          | https://github.com/citusdata/postgresql-hll       | Package         |
+| hypopg               | https://github.com/HypoPG/hypopg                  | Package         |
+| pg_cron              | https://github.com/citusdata/pg_cron              | Package         |
+| pg_qualstats         | https://github.com/powa-team/pg_qualstats         | Package         |
+| pg_stat_kcache       | https://github.com/powa-team/pg_stat_kcache       | Package         |
+| pgrouting            | https://pgrouting.org                             | Package         |
+| pgsodium             | https://github.com/michelp/pgsodium               | Build           |
+| postgis              | https://postgis.net                               | Package         |
+| postgres-json-schema | https://github.com/gavinwahl/postgres-json-schema | Build           |
+| powa                 | https://github.com/powa-team/powa                 | Package         |
+| tdigest              | https://github.com/tvondra/tdigest                | Package         |
+| topn                 | https://github.com/citusdata/postgresql-topn      | Package         |
+| vector               | https://github.com/ankane/pgvector                | Build           |
+
+#### Enable hypopg
+
+```sql
+CREATE EXTENSION hypopg;
+```
+
+#### Enable powa
+
+```sql
+CREATE EXTENSION pg_stat_statements;
+CREATE EXTENSION btree_gist;
+CREATE EXTENSION powa;
+CREATE EXTENSION pg_qualstats;
+CREATE EXTENSION pg_stat_kcache;
+```
 
 ## Usage
 
@@ -53,7 +72,7 @@ namespace: /nomad
 
 restapi:
   listen: 0.0.0.0:{{env "NOMAD_PORT_api"}}
-  connect_address: {{env "NOMAD_ADDR_api"}}
+  connect_address: 0.0.0.0:{{env "NOMAD_PORT_api"}}
 
 consul:
   host: localhost
