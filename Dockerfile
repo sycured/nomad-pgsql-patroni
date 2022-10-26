@@ -69,11 +69,7 @@ RUN set -x \
     \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/cache/apt/* \
-    \
-    # Add postgres to root group so it can read a private key for TLS
-    # See https://github.com/hashicorp/nomad/issues/5020
-    && gpasswd -a postgres root
+    && rm -rf /var/cache/apt/*
 
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY ./files/000_shared_libs.sh /docker-entrypoint-initdb.d/000_shared_libs.sh
