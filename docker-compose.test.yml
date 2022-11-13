@@ -15,4 +15,5 @@ services:
     tmpfs:
       - /alloc
     volumes:
-      - './example-patroni.yml:/secrets/patroni.yml'
+      - './example-patroni.yml:/etc/patroni/config.yml:Z'
+      - './files/pgsodium_getkey_urandom.sh:/usr/pgsql-15/share/extension/pgsodium_getkey:Z'

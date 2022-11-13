@@ -1,6 +1,6 @@
 scope: local
 name: postgres
-namespace: /
+namespace: /patroni
 
 restapi:
   listen: 0.0.0.0:8008
@@ -35,9 +35,9 @@ bootstrap:
   - encoding: UTF8
 
   pg_hba:
-  - host  all           postgres  all md5
-  - host  replication   repl      all md5
-  - host  all           all       all md5
+  - host  all           postgres  all scram-sha-256
+  - host  replication   repl      all scram-sha-256
+  - host  all           all       all scram-sha-256
 
   users:
     postgres:

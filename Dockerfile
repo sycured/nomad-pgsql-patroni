@@ -1,16 +1,31 @@
-ARG POSTGIS_MAJOR=3
+ARG PGVECTOR_VERSION=v0.3.0
+ARG POSTGRES_MAJOR=15
+
+FROM oraclelinux:9 as base
+ARG POSTGRES_MAJOR
+ENV PATH="/usr/pgsql-15/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+RUN dnf upgrade -y \
+    && dnf install -y \
+#        https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
+        https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+    && echo -e '[pgdg-common]\nname=PostgreSQL common RPMs for RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/common/redhat/rhel-$releasever-$basearch\nenabled=1\ngpgcheck=0\nrepo_gpgcheck = 0\n[pgdg-rhel9-sysupdates]\nname=PostgreSQL Supplementary ucommon RPMs for RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/common/pgdg-rocky9-sysupdates/redhat/rhel-$releasever-$basearch\nenabled=0\ngpgcheck=0\nrepo_gpgcheck = 0\n[pgdg-rhel9-extras]\nname=Extra packages to support some RPMs in the PostgreSQL RPM repo RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/common/pgdg-rhel$releasever-extras/redhat/rhel-$releasever-$basearch\nenabled=1\ngpgcheck=0\nrepo_gpgcheck = 0\n[pgdg15]\nname=PostgreSQL 15 for RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/15/redhat/rhel-$releasever-$basearch\nenabled=1\ngpgcheck=0\nrepo_gpgcheck = 0' >> /etc/yum.repos.d/pgdg.repo \
+    && dnf install -y postgresql${POSTGRES_MAJOR}-server \
+    && rm -rf /var/cache/dnf/* \
+    && mkdir /docker-entrypoint-initdb.d
 
 ############################
 # Build Postgres extensions
 ############################
-FROM citusdata/citus:latest AS ext_build
-ARG PGSODIUM_VERSION=v3.0.6
-ARG PGVECTOR_VERSION=v0.3.0
+FROM base AS ext_build
+ARG POSTGRES_MAJOR
+ARG PGVECTOR_VERSION
 
-RUN set -x \
-    && apt-get update -y \
-    && apt-get upgrade -y \
-    && apt-get install -y git build-essential libipc-run-perl postgresql-server-dev-${PG_MAJOR} libsodium-dev \
+RUN export PATH="/usr/pgsql-${POSTGRES_MAJOR}/bin:$PATH" \
+    && dnf install --enablerepo=ol9_codeready_builder -y \
+        ccache \
+        git-core \
+        postgresql${POSTGRES_MAJOR}-devel \
+        redhat-rpm-config \
     && mkdir /build \
     && cd /build \
     \
@@ -25,56 +40,50 @@ RUN set -x \
     && git clone https://github.com/gavinwahl/postgres-json-schema \
     && cd postgres-json-schema \
     && make \
-    && make install \
-    && cd .. \
-    \
-    # Build pgsodium
-    && git clone --branch $PGSODIUM_VERSION https://github.com/michelp/pgsodium \
-    && cd pgsodium \
-    && make \
     && make install
 
 ############################
 # Final
 ############################
-FROM citusdata/citus:latest
-ARG POSTGIS_MAJOR
+FROM base
+ARG POSTGRES_MAJOR
 
 # Add extensions
-COPY --from=ext_build /usr/share/postgresql/${PG_MAJOR}/ /usr/share/postgresql/${PG_MAJOR}/
-COPY --from=ext_build /usr/lib/postgresql/${PG_MAJOR}/ /usr/lib/postgresql/${PG_MAJOR}/
+COPY --from=ext_build /usr/pgsql-${POSTGRES_MAJOR}/share/ /usr/pgsql-${POSTGRES_MAJOR}/share/
+COPY --from=ext_build /usr/pgsql-${POSTGRES_MAJOR}/lib/ /usr/pgsql-${POSTGRES_MAJOR}/lib/
 
-RUN set -x \
-    && apt-get update -y \
-    && apt-get upgrade -y \
-    && apt-get install --no-install-recommends -y curl lsb-release procps \
-        libsodium23 \
-        patroni \
-        python3-consul \
-        postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
-        postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts \
-        postgis \
-        postgresql-$PG_MAJOR-pgrouting \
-        postgresql-$PG_MAJOR-pgcron \
-        postgresql-$PG_MAJOR-tdigest \
-        postgresql-$PG_MAJOR-powa \
-        postgresql-$PG_MAJOR-pg-stat-kcache \
-        postgresql-$PG_MAJOR-pg-qualstats \
-        postgresql-$PG_MAJOR-hypopg \
-    \
+RUN dnf install --enablerepo=ol9_codeready_builder -y \
+    nss_wrapper \
+    citus_${POSTGRES_MAJOR} \
+    pgsodium_${POSTGRES_MAJOR} \
+    patroni \
+    patroni-consul \
+    pgrouting_${POSTGRES_MAJOR} \
+    pg_cron_${POSTGRES_MAJOR} \
+    tdigest_${POSTGRES_MAJOR} \
+    hll_${POSTGRES_MAJOR} \
+    powa_${POSTGRES_MAJOR} \
+    pg_stat_kcache_${POSTGRES_MAJOR} \
+    pg_qualstats_${POSTGRES_MAJOR} \
+    hypopg_${POSTGRES_MAJOR} \
+    topn_${POSTGRES_MAJOR} \
+    && cpuarch=$(uname -m) \
     # Install WAL-G
-    && curl -LO https://github.com/wal-g/wal-g/releases/download/v2.0.1/wal-g-pg-ubuntu-20.04-$(uname -m) \
-    && install -oroot -groot -m755 wal-g-pg-ubuntu-20.04-$(uname -m) /usr/local/bin/wal-g \
-    && rm wal-g-pg-ubuntu-20.04-$(uname -m) \
+    && [[ $cpuarch == x86_64 ]] && walg_arch=amd64 || walg_arch=aarch64 \
+    && curl -LO https://github.com/wal-g/wal-g/releases/download/v2.0.1/wal-g-pg-ubuntu-20.04-$walg_arch \
+    && install -oroot -groot -m755 wal-g-pg-ubuntu-20.04-$walg_arch /usr/local/bin/wal-g \
+    && rm wal-g-pg-ubuntu-20.04-$walg_arch \
+    # Install gosu
+    && [[ $cpuarch == x86_64 ]] && gosu_arch=amd64 || gosu_arch=arm64 \
+    && curl -LO https://github.com/tianon/gosu/releases/download/1.14/gosu-$gosu_arch \
+    && install -oroot -groot -m755 gosu-$gosu_arch /usr/local/bin/gosu \
+    && rm gosu-$gosu_arch \
     \
     # Cleanup
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/cache/apt/*
+    && rm -rf /var/cache/dnf/*
 
-RUN mkdir -p /docker-entrypoint-initdb.d
 COPY ./files/000_shared_libs.sh /docker-entrypoint-initdb.d/000_shared_libs.sh
 COPY ./files/001_initdb_postgis.sh /docker-entrypoint-initdb.d/001_initdb_postgis.sh
-
 COPY ./files/update-postgis.sh /usr/local/bin
 COPY ./files/docker-initdb.sh /usr/local/bin
 
