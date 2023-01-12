@@ -1,14 +1,15 @@
-scope: local
+scope: pg
 name: postgres
 namespace: /patroni
 
 restapi:
   listen: 0.0.0.0:8008
-  connect_address: 127.0.0.1:8008
+  connect_address: patroni:8008
 
 consul:
   scheme: http
   host: consul:8500
+  register_service: true
 
 bootstrap:
   dcs:
@@ -20,11 +21,18 @@ bootstrap:
       use_pg_rewind: true
       use_slots: true
       parameters:
-        max_connections: 100
+        log_file_mode: "0640"
+        log_filename: postgresql-%u.log
+        log_rotation_age: 1d
+        log_truncate_on_rotation: "on"
+        max_connections: 120
         shared_buffers: 64MB
         work_mem: 16MB
         effective_cache_size: 512MB
         tcp_keepalives_idle: 300
+        wal_level: "replica"
+        password_encryption: scram-sha-256
+        superuser_reserved_connections: 20
 
   method: local
   local:
@@ -33,6 +41,7 @@ bootstrap:
 
   initdb:
   - encoding: UTF8
+  - data-checksums
 
   pg_hba:
   - host  all           postgres  all scram-sha-256
@@ -52,7 +61,7 @@ bootstrap:
 
 postgresql:
   listen: 0.0.0.0:5432
-  connect_address: 0.0.0.0:5432
+  connect_address: patroni:5432
   use_unix_socket: true
   data_dir: /alloc/data
   authentication:
