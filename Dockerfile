@@ -8,7 +8,7 @@ RUN dnf upgrade -y \
     && dnf install -y yum-utils https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
     && echo -e '[pgdg-common]\nname=PostgreSQL common RPMs for RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/common/redhat/rhel-$releasever-$basearch\nenabled=1\ngpgcheck=0\nrepo_gpgcheck = 0\n[pgdg-rhel9-sysupdates]\nname=PostgreSQL Supplementary ucommon RPMs for RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/common/pgdg-rocky9-sysupdates/redhat/rhel-$releasever-$basearch\nenabled=0\ngpgcheck=0\nrepo_gpgcheck = 0\n[pgdg-rhel9-extras]\nname=Extra packages to support some RPMs in the PostgreSQL RPM repo RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/common/pgdg-rhel$releasever-extras/redhat/rhel-$releasever-$basearch\nenabled=0\ngpgcheck=0\nrepo_gpgcheck = 0\n[pgdg15]\nname=PostgreSQL 15 for RHEL / Rocky $releasever - $basearch\nbaseurl=https://download.postgresql.org/pub/repos/yum/15/redhat/rhel-$releasever-$basearch\nenabled=1\ngpgcheck=0\nrepo_gpgcheck = 0' >> /etc/yum.repos.d/pgdg.repo \
     && yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo \
-    && dnf install -y postgresql${POSTGRES_MAJOR}-server \
+    && dnf install -y postgresql${POSTGRES_MAJOR}-server postgresql${POSTGRES_MAJOR}-llvmjit \
     && rm -rf /var/cache/dnf/* \
     && mkdir /docker-entrypoint-initdb.d
 
@@ -44,7 +44,7 @@ RUN export PATH="/usr/pgsql-${POSTGRES_MAJOR}/bin:$PATH" \
 ############################
 # Final
 ############################
-FROM base
+FROM base as final
 ARG POSTGRES_MAJOR
 
 # Add extensions
@@ -53,19 +53,22 @@ COPY --from=ext_build /usr/pgsql-${POSTGRES_MAJOR}/lib/ /usr/pgsql-${POSTGRES_MA
 
 RUN dnf install --enablerepo=ol9_codeready_builder -y \
     nss_wrapper \
-    citus_${POSTGRES_MAJOR} \
-    pgsodium_${POSTGRES_MAJOR} \
+    citus_${POSTGRES_MAJOR}-llvmjit \
+    pgsodium_${POSTGRES_MAJOR}-llvmjit \
     patroni \
     patroni-consul \
     pgrouting_${POSTGRES_MAJOR} \
     pg_cron_${POSTGRES_MAJOR} \
     tdigest_${POSTGRES_MAJOR} \
     hll_${POSTGRES_MAJOR} \
+    postgresql_anonymizer_${POSTGRES_MAJOR}-llvmjit \
     powa_${POSTGRES_MAJOR} \
+    pg_squeeze_${POSTGRES_MAJOR}-llvmjit \
     pg_stat_kcache_${POSTGRES_MAJOR} \
     pg_qualstats_${POSTGRES_MAJOR} \
     hypopg_${POSTGRES_MAJOR} \
-    topn_${POSTGRES_MAJOR} \
+    sequential_uuids_${POSTGRES_MAJOR}-llvmjit \
+    topn_${POSTGRES_MAJOR}-llvmjit \
     && cpuarch=$(uname -m) \
     # Install WAL-G
     && [[ $cpuarch == x86_64 ]] && walg_arch=amd64 || walg_arch=aarch64 \
