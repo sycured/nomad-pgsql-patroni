@@ -46,6 +46,7 @@ RUN export PATH="/usr/pgsql-${POSTGRES_MAJOR}/bin:$PATH" \
 ############################
 FROM base as final
 ARG POSTGRES_MAJOR
+EXPOSE 5432 8008
 
 # Add extensions
 COPY --from=ext_build /usr/pgsql-${POSTGRES_MAJOR}/share/ /usr/pgsql-${POSTGRES_MAJOR}/share/
