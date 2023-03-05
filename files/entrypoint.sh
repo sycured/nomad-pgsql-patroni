@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-KEY_FILE=$PGDATA/pgsodium_root.key
+KEY_FILE=/alloc/pgdata/pgsodium_root.key
 cat <<EOF >$KEY_FILE
 $PGSODIUM_KEY
 cat $KEY_FILE
