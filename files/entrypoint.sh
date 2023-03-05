@@ -6,4 +6,4 @@ $PGSODIUM_KEY
 cat $KEY_FILE
 EOF
 
-"/usr/bin/patroni", "/secrets/config.yml"
+exec /usr/bin/patroni /secrets/config.yml
