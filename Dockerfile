@@ -91,4 +91,4 @@ COPY ./files/update-postgis.sh /usr/local/bin
 COPY ./files/docker-initdb.sh /usr/local/bin
 
 USER postgres
-CMD ["/usr/bin/patroni", "/etc/patroni/config.yml"]
+CMD ["/usr/bin/patroni", "/secrets/config.yml"]
