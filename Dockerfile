@@ -89,6 +89,7 @@ COPY ./files/000_shared_libs.sh /docker-entrypoint-initdb.d/000_shared_libs.sh
 COPY ./files/001_initdb_postgis.sh /docker-entrypoint-initdb.d/001_initdb_postgis.sh
 COPY ./files/update-postgis.sh /usr/local/bin
 COPY ./files/docker-initdb.sh /usr/local/bin
+COPY ./files/entrypoint.sh /usr/local/bin
 
 USER postgres
-CMD ["/usr/bin/patroni", "/secrets/config.yml"]
+CMD [ "/usr/local/bin/entrypoint.sh" ]
