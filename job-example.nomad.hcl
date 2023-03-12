@@ -1,18 +1,18 @@
 job "postgres-15" {
-  type = "service"
+  type        = "service"
   datacenters = ["saopaulo1"]
 
   constraint {
     attribute = "${attr.cpu.arch}"
-    value = "arm64"
+    value     = "arm64"
   }
 
   update {
-    max_parallel = 1
-    healthy_deadline = "3m"
+    max_parallel      = 1
+    healthy_deadline  = "3m"
     progress_deadline = "10m"
-    auto_revert = false
-    canary = 0
+    auto_revert       = false
+    canary            = 0
   }
 
   group "pg15" {
@@ -25,19 +25,19 @@ job "postgres-15" {
     }
 
     volume "postgresql" {
-      type = "host"
-      source = "postgresql"
+      type      = "host"
+      source    = "postgresql"
       read_only = false
     }
 
     network {
       port api {
         static = 8008
-        to = 8008
-        }
+        to     = 8008
+      }
       port pg {
         static = 5432
-        to = 5432
+        to     = 5432
       }
     }
 
@@ -124,20 +124,20 @@ EOL
       }
 
       env {
-        PGDATA = "/alloc/pgdata/data"
+        PGDATA       = "/alloc/pgdata/data"
         PGSODIUM_KEY = "REPLACE ME WITH: head -c 32 /dev/urandom | od -A n -t x1 | tr -d ' \n'"
       }
 
       config {
-        image = "docker.io/sycured/nomad-pgsql-patroni:latest"
+        image      = "docker.io/sycured/nomad-pgsql-patroni:latest"
         force_pull = true
-        ports = ["api", "pg"]
-        volumes = ["/opt/postgresql:/alloc/pgdata:rw"]
+        ports      = ["api", "pg"]
+        volumes    = ["/opt/postgresql:/alloc/pgdata:rw"]
       }
 
       resources {
-        cpu = 750
-        memory = 512
+        cpu        = 750
+        memory     = 512
         memory_max = 4096
       }
     }
