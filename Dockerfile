@@ -76,13 +76,12 @@ RUN dnf install --enablerepo=ol9_codeready_builder -y \
     && curl -LO https://github.com/wal-g/wal-g/releases/download/v2.0.1/wal-g-pg-ubuntu-20.04-$walg_arch \
     && install -oroot -groot -m755 wal-g-pg-ubuntu-20.04-$walg_arch /usr/local/bin/wal-g \
     && rm wal-g-pg-ubuntu-20.04-$walg_arch \
-    # Install gosu
     && [[ $cpuarch == x86_64 ]] && gosu_arch=amd64 || gosu_arch=arm64 \
-    && curl -LO https://github.com/tianon/gosu/releases/download/1.14/gosu-$gosu_arch \
+    && curl -LO https://github.com/tianon/gosu/releases/download/1.16/gosu-$gosu_arch \
     && install -oroot -groot -m755 gosu-$gosu_arch /usr/local/bin/gosu \
     && rm gosu-$gosu_arch \
-    \
-    # Cleanup
+    && [[ $cpuarch == x86_64 ]] && pgtimetable_arch=x86_64 || pgtimetable_arch=arm64 \
+    && dnf install -y https://github.com/cybertec-postgresql/pg_timetable/releases/download/v5.3.0/pg_timetable_5.3.0_Linux_${pgtimetable_arch}.rpm \
     && rm -rf /var/cache/dnf/*
 
 COPY ./files/000_shared_libs.sh /docker-entrypoint-initdb.d/000_shared_libs.sh

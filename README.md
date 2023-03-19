@@ -6,10 +6,11 @@ It also comes pre-baked with some tools and extensions
 
 ## Tools
 
-| Name    | Link                               | Type of install |
-| ------- | ---------------------------------- | --------------- |
-| Patroni | https://github.com/zalando/patroni | Package         |
-| WAL-G   | https://github.com/wal-g/wal-g     | Binary          |
+| Name         | Link                                                | Type of install |
+| ------------ | --------------------------------------------------- | --------------- |
+| Patroni      | https://github.com/zalando/patroni                  | Package         |
+| Pg_Timetable | https://github.com/cybertec-postgresql/pg_timetable | Package         |
+| WAL-G        | https://github.com/wal-g/wal-g                      | Binary          |
 
 ## Extensions
 
